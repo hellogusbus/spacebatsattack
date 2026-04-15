@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Space Bats, Attack!</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --void: #03020a;
+    --deep: #08051a;
+    --mid: #110d2e;
+    --accent: #c8a96e;
+    --accent2: #7b6fff;
+    --text: #e8e4d8;
+    --muted: #7a7590;
+    --border: rgba(200,169,110,0.18);
+  }
+  html { scroll-behavior: smooth; }
+  body { background: var(--void); color: var(--text); font-family: 'Space Mono', monospace; overflow-x: hidden; cursor: none; }
+  #cursor { position: fixed; width: 8px; height: 8px; background: var(--accent); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); transition: width .15s, height .15s; mix-blend-mode: screen; }
+  #cursor-ring { position: fixed; width: 32px; height: 32px; border: 1px solid rgba(200,169,110,0.4); border-radius: 50%; pointer-events: none; z-index: 9998; transform: translate(-50%,-50%); transition: width .2s, height .2s; }
+  #star-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1.5rem 4rem;
+    background: linear-gradient(to bottom, rgba(3,2,10,0.95) 0%, transparent 100%);
+  }
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .nav-links { display: flex; gap: 3rem; list-style: none; }
+  .nav-links a { font-family: 'Space Mono', monospace; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color .3s; position: relative; }
+  .nav-links a::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 1px; background: var(--accent); transition: width .3s; }
+  .nav-links a:hover { color: var(--accent); }
+  .nav-links a:hover::after { width: 100%; }
+
+  section { position: relative; z-index: 1; }
+
+  #home { min-height: 100vh; display: flex; align-items: flex-end; padding: 0 4rem 8rem; position: relative; }
+  .hero-content { max-width: 900px; }
+  .hero-eyebrow { font-family: 'Space Mono', monospace; font-size: 0.65rem; letter-spacing: 0.35em; text-transform: uppercase; color: var(--accent); margin-bottom: 1.5rem; opacity: 0; animation: fadeUp 1s 0.3s forwards; }
+  .hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(5rem, 14vw, 13rem); line-height: 0.88; letter-spacing: -0.01em; color: var(--text); opacity: 0; animation: fadeUp 1s 0.5s forwards; }
+  .hero-title em { font-style: normal; color: transparent; -webkit-text-stroke: 1px rgba(200,169,110,0.6); }
+  .hero-sub { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.1rem; color: var(--muted); margin-top: 2rem; letter-spacing: 0.05em; opacity: 0; animation: fadeUp 1s 0.8s forwards; }
+  .hero-line { position: absolute; right: 4rem; bottom: 8rem; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; opacity: 0; animation: fadeIn 1s 1.2s forwards; }
+  .hero-line span { font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); writing-mode: vertical-rl; }
+  .hero-line::after { content: ''; width: 1px; height: 80px; background: linear-gradient(to bottom, var(--accent), transparent); }
+
+  .section-divider { width: 1px; height: 120px; background: linear-gradient(to bottom, transparent, var(--border), transparent); margin: 0 auto; }
+
+  #music { padding: 8rem 4rem; max-width: 1200px; margin: 0 auto; }
+  .section-header { display: flex; align-items: baseline; gap: 2rem; margin-bottom: 5rem; }
+  .section-number { font-family: 'Space Mono', monospace; font-size: 0.65rem; color: var(--accent); letter-spacing: 0.2em; }
+  .section-title { font-family: 'Bebas Neue', sans-serif; font-size: 4rem; letter-spacing: 0.05em; color: var(--text); }
+  .section-title-line { flex: 1; height: 1px; background: var(--border); }
+
+  /* Studio albums — large 2-up grid */
+  .studio-label {
+    font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 1.5rem;
+  }
+  .studio-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    margin-bottom: 5rem;
+  }
+  .release-card { position: relative; overflow: hidden; background: var(--deep); aspect-ratio: 1; cursor: none; }
+  .release-card::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(123,111,255,0.08), rgba(200,169,110,0.05)); opacity: 0; transition: opacity .4s; z-index: 1; }
+  .release-card:hover::before { opacity: 1; }
+  .release-art { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
+  .release-art svg { width: 60%; opacity: 0.6; transition: opacity .4s, transform .6s; }
+  .release-card:hover .release-art svg { opacity: 0.9; transform: scale(1.05) rotate(3deg); }
+  .release-info { position: absolute; bottom: 0; left: 0; right: 0; padding: 2rem 1.5rem 1.5rem; background: linear-gradient(to top, rgba(3,2,10,0.95) 0%, transparent 100%); z-index: 2; transform: translateY(10px); opacity: 0; transition: transform .3s, opacity .3s; }
+  .release-card:hover .release-info { transform: translateY(0); opacity: 1; }
+  .release-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.08em; color: var(--text); }
+  .release-meta { font-size: 0.65rem; letter-spacing: 0.2em; color: var(--accent); text-transform: uppercase; margin-top: 0.3rem; }
+  .listen-btn { display: inline-block; margin-top: 0.75rem; padding: 0.4rem 1rem; border: 1px solid var(--border); font-family: 'Space Mono', monospace; font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); background: transparent; cursor: none; transition: background .2s, border-color .2s; }
+  .listen-btn:hover { background: rgba(200,169,110,0.1); border-color: var(--accent); }
+
+  /* Sub-section: EPs & Live */
+  .sub-section-divider {
+    display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem;
+  }
+  .sub-section-label {
+    font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); white-space: nowrap;
+  }
+  .sub-section-line { flex: 1; height: 1px; background: var(--border); }
+
+  .small-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+  }
+
+  /* Small cards are wider than tall */
+  .release-card-sm {
+    position: relative; overflow: hidden; background: var(--deep);
+    aspect-ratio: 3/4; cursor: none;
+  }
+  .release-card-sm::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(123,111,255,0.08), rgba(200,169,110,0.05)); opacity: 0; transition: opacity .4s; z-index: 1; }
+  .release-card-sm:hover::before { opacity: 1; }
+  .release-card-sm .release-art { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+  .release-card-sm .release-art svg { width: 55%; opacity: 0.5; transition: opacity .4s, transform .5s; }
+  .release-card-sm:hover .release-art svg { opacity: 0.85; transform: scale(1.08); }
+  .release-card-sm .release-info { position: absolute; bottom: 0; left: 0; right: 0; padding: 1.5rem 1rem 1rem; background: linear-gradient(to top, rgba(3,2,10,0.97) 0%, transparent 100%); z-index: 2; transform: translateY(8px); opacity: 0; transition: transform .3s, opacity .3s; }
+  .release-card-sm:hover .release-info { transform: translateY(0); opacity: 1; }
+  .release-card-sm .release-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 0.06em; color: var(--text); }
+  .release-card-sm .release-meta { font-size: 0.58rem; letter-spacing: 0.18em; color: var(--accent); text-transform: uppercase; margin-top: 0.2rem; }
+  .release-card-sm .listen-btn { margin-top: 0.5rem; padding: 0.3rem 0.8rem; font-size: 0.55rem; }
+
+  /* type badge */
+  .type-badge {
+    position: absolute; top: 1rem; right: 1rem; z-index: 3;
+    padding: 0.25rem 0.6rem;
+    border: 1px solid var(--border);
+    font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--muted); background: rgba(3,2,10,0.7);
+  }
+  .type-badge.live { color: var(--accent2); border-color: rgba(123,111,255,0.3); }
+
+  #shows { padding: 8rem 4rem; max-width: 1200px; margin: 0 auto; }
+  .shows-list { display: flex; flex-direction: column; }
+  .show-row { display: grid; grid-template-columns: 120px 1fr auto auto; align-items: center; gap: 2rem; padding: 1.75rem 0; border-bottom: 1px solid var(--border); position: relative; cursor: none; transition: padding-left .3s; }
+  .show-row::before { content: ''; position: absolute; left: -4rem; top: 0; bottom: 0; width: 0; background: rgba(200,169,110,0.04); transition: width .3s; z-index: -1; }
+  .show-row:hover { padding-left: 0.5rem; }
+  .show-row:hover::before { width: calc(100% + 8rem); }
+  .show-date { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.05em; color: var(--accent); line-height: 1; }
+  .show-date-sub { font-size: 0.6rem; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; margin-top: 2px; }
+  .show-venue { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 0.05em; color: var(--text); }
+  .show-location { font-size: 0.65rem; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; margin-top: 4px; }
+  .show-support { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.1em; text-align: right; }
+  .show-support span { display: block; color: var(--text); font-size: 0.75rem; margin-top: 2px; }
+  .ticket-btn { padding: 0.6rem 1.4rem; border: 1px solid var(--border); font-family: 'Space Mono', monospace; font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); background: transparent; cursor: none; white-space: nowrap; transition: background .2s, border-color .2s; }
+  .ticket-btn:hover { background: rgba(200,169,110,0.1); border-color: var(--accent); }
+
+  #about { padding: 8rem 4rem 12rem; max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 8rem; align-items: start; }
+  .about-text p { font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; font-weight: 300; line-height: 1.8; color: var(--text); margin-bottom: 1.5rem; }
+  .about-text p + p { color: var(--muted); font-size: 1.15rem; }
+  .about-orbit { position: relative; width: 100%; aspect-ratio: 1; }
+  .orbit-ring { position: absolute; border-radius: 50%; border: 1px solid var(--border); }
+  .orbit-ring:nth-child(1) { inset: 10%; animation: spin 40s linear infinite; }
+  .orbit-ring:nth-child(2) { inset: 25%; border-style: dashed; animation: spin 28s linear infinite reverse; }
+  .orbit-ring:nth-child(3) { inset: 40%; animation: spin 18s linear infinite; }
+  .orbit-dot { position: absolute; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; top: -3px; left: calc(50% - 3px); }
+  .orbit-center { position: absolute; inset: 45%; background: radial-gradient(circle, var(--accent2) 0%, transparent 70%); border-radius: 50%; opacity: 0.6; }
+  .members-list { margin-top: 3rem; display: flex; flex-direction: column; }
+  .member { display: flex; justify-content: space-between; align-items: baseline; padding: 1rem 0; border-bottom: 1px solid var(--border); }
+  .member-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.05em; color: var(--text); }
+  .member-role { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+
+  .footer { position: relative; z-index: 1; border-top: 1px solid var(--border); padding: 3rem 4rem; display: flex; justify-content: space-between; align-items: center; }
+  .footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 0.15em; color: var(--muted); }
+  .footer-links { display: flex; gap: 2rem; }
+  .footer-links a { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color .2s; }
+  .footer-links a:hover { color: var(--accent); }
+  .footer-copy { font-size: 0.6rem; letter-spacing: 0.1em; color: var(--muted); opacity: 0.5; }
+
+  @keyframes fadeUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+
+  .glitch { position: relative; }
+  .glitch:hover::before, .glitch:hover::after { content: attr(data-text); position: absolute; top:0; left:0; width:100%; font-family:'Bebas Neue',sans-serif; font-size:inherit; line-height:inherit; }
+  .glitch:hover::before { color:var(--accent2); animation:glitch1 .3s step-start infinite; clip-path:polygon(0 0,100% 0,100% 45%,0 45%); }
+  .glitch:hover::after { color:var(--accent); animation:glitch2 .3s step-start infinite; clip-path:polygon(0 55%,100% 55%,100% 100%,0 100%); }
+  @keyframes glitch1 { 0%,100%{transform:translate(0)} 20%{transform:translate(-3px,1px)} 40%{transform:translate(3px,-1px)} 60%{transform:translate(-2px,2px)} 80%{transform:translate(2px,-2px)} }
+  @keyframes glitch2 { 0%,100%{transform:translate(0)} 20%{transform:translate(3px,-1px)} 40%{transform:translate(-3px,1px)} 60%{transform:translate(2px,-2px)} 80%{transform:translate(-2px,2px)} }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<canvas id="star-canvas"></canvas>
+
+<nav>
+  <a href="#home" class="nav-logo">Space Bats, Attack!</a>
+  <ul class="nav-links">
+    <li><a href="#music">Music</a></li>
+    <li><a href="#shows">Shows</a></li>
+    <li><a href="#about">About</a></li>
+  </ul>
+</nav>
+
+<section id="home">
+  <div class="hero-content">
+    <p class="hero-eyebrow">Dunedin, New Zealand &nbsp;·&nbsp;</p>
+    <h1 class="hero-title glitch" data-text="Space Bats,">Space Bats,<br><em>Attack!</em></h1>
+    <p class="hero-sub">Transmissions from the outer dark &mdash; math rock, post rock, electronics</p>
+  </div>
+  <div class="hero-line"><span>Scroll</span></div>
+</section>
+
+<div class="section-divider"></div>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Space Bats, Attack!</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
+<style>
+  /* (Your existing CSS remains unchanged until the .release-art section) */
+
+  .release-art {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .release-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform .6s ease;
+  }
+
+  .release-card:hover .release-art img,
+  .release-card-sm:hover .release-art img {
+    transform: scale(1.06);
+  }
+
+  /* Rest of your original CSS... */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --void: #03020a;
+    --deep: #08051a;
+    --mid: #110d2e;
+    --accent: #c8a96e;
+    --accent2: #7b6fff;
+    --text: #e8e4d8;
+    --muted: #7a7590;
+    --border: rgba(200,169,110,0.18);
+  }
+  /* ... (all your original styles continue here) ... */
+</style>
+</head>
+<body>
+
+<!-- [Your nav, home, canvas, etc. remain unchanged] -->
+
+<section id="music">
+  <div class="section-header">
+    <span class="section-number">01 &mdash;</span>
+    <h2 class="section-title">Music</h2>
+    <div class="section-title-line"></div>
+  </div>
+
+  <p class="studio-label">Studio Albums</p>
+
+  <div class="studio-grid">
+
+    <!-- Album 1 -->
+    <div class="release-card">
+      <div class="release-art">
+        <img src="images/sba.webp" 
+             alt="Space Bats, Attack! (2015)" loading="lazy">
+      </div>
+      <div class="release-info">
+        <div class="release-title">Space Bats, Attack!</div>
+        <div class="release-meta">Studio Album &nbsp;·&nbsp; 2015</div>
+        <a href="https://spacebatsattack.bandcamp.com/album/space-bats-attack" class="listen-btn" target="_blank" rel="noopener">Listen</a>
+      </div>
+    </div>
+
+    <!-- Album 2 -->
+    <div class="release-card">
+      <div class="release-art">
+        <img src="images/oort.webp" 
+             alt="Oort (2021)" loading="lazy">
+      </div>
+      <div class="release-info">
+        <div class="release-title">Oort</div>
+        <div class="release-meta">Studio Album &nbsp;·&nbsp; 2021</div>
+        <a href="https://spacebatsattack.bandcamp.com/album/oort" class="listen-btn" target="_blank" rel="noopener">Listen</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- EPs & Live sub-section -->
+  <div class="sub-section-divider">
+    <span class="sub-section-label">EPs &amp; Live</span>
+    <div class="sub-section-line"></div>
+  </div>
+
+  <div class="small-grid">
+
+    <!-- EP 1 -->
+    <div class="release-card-sm">
+      <span class="type-badge">EP</span>
+      <div class="release-art">
+        <img src="images/Holy.webp" 
+             alt="Holy Schmow, Drone Metal?" loading="lazy">
+      </div>
+      <div class="release-info">
+        <div class="release-title">Holy Schmow, Drone Metal?</div>
+        <div class="release-meta">EP &nbsp;·&nbsp; 2012</div>
+        <a href="https://spacebatsattack.bandcamp.com/album/holy-schmow-drone-metal" class="listen-btn" target="_blank" rel="noopener">Listen</a>
+      </div>
+    </div>
+
+    <!-- EP 2 -->
+    <div class="release-card-sm">
+      <span class="type-badge">EP</span>
+      <div class="release-art">
+        <img src="images/EP1.webp" 
+             alt="EP1" loading="lazy">
+      </div>
+      <div class="release-info">
+        <div class="release-title">EP1</div>
+        <div class="release-meta">EP &nbsp;·&nbsp; 2013</div>
+        <a href="https://spacebatsattack.bandcamp.com/album/ep1" class="listen-btn" target="_blank" rel="noopener">Listen</a>
+      </div>
+    </div>
+
+    <!-- EP 3 -->
+    <div class="release-card-sm">
+      <span class="type-badge live">EP</span>
+      <div class="release-art">
+        <img src="images/ˆ_ˆ.webp" 
+             alt="ˆ"ˆ Sub-EP ^«^" loading="lazy">
+      </div>
+      <div class="release-info">
+        <div class="release-title">ˆ"ˆ Sub-EP ^«^  </div>
+        <div class="release-meta">EP &nbsp;·&nbsp; 2016</div>
+        <a href="https://spacebatsattack.bandcamp.com/album/sub-ep" class="listen-btn" target="_blank" rel="noopener">Listen</a>
+      </div>
+    </div>
+
+    <!-- Live 1 -->
+    <div class="release-card-sm">
+      <span class="type-badge live">Live</span>
+      <div class="release-art">
+        <img src="images/live.webp" 
+             alt="Transmission: Whammy" loading="lazy">
+      </div>
+      <div class="release-info">
+        <div class="release-title">Radio One Live to Air</div>
+        <div class="release-meta">Live &nbsp;·&nbsp; 2017</div>
+        <a href="https://spacebatsattack.bandcamp.com/album/radio-one-live-to-air" class="listen-btn" target="_blank" rel="noopener">Listen</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- The rest of your site (shows, about, footer, script) stays exactly the same -->
+
+</body>
+</html>
+
+<div class="section-divider"></div>
+
+<section id="shows">
+  <div style="max-width:1200px; margin:0 auto; padding:0 4rem;">
+    <div class="section-header">
+      <span class="section-number">02 &mdash;</span>
+      <h2 class="section-title">Shows</h2>
+      <div class="section-title-line"></div>
+    </div>
+    <div class="shows-list">
+<!--PUT SHOW CODE IN HERE-->>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<section id="about">
+  <div class="about-text">
+    <div class="section-header" style="margin-bottom:3rem;">
+      <span class="section-number">03 &mdash;</span>
+      <h2 class="section-title">About</h2>
+    </div>
+    <p>Space Bats, Attack! are a New Zealand sci-fi-soaked doom rock collective known for their spellbinding, frenetic live shows and intricate, expansive instrumental soundscapes.</p>
+    <p>Formed in 2011 in Ōtepoti Dunedin by guitarist Lee Nicolson (Thundercub / Lightning Wave) and drummer Josh Nicholls (Bathysphere, Dale Kerrigan, Fazed on a Pony), the band was later joined by Richard Ley-Hamilton (asta rangu) in 2013 and Zac Nicholls (Koizilla) in 2016.
+The current quartet crafts angular, expansive, and hard-hitting instrumental rock, blending heavy celestial riffs with raw, improvised energy.</p>
+    <div class="members-list">
+      <div class="member"><span class="member-name">Lee Nicholson</span><span class="member-role">Guitar / Pedals</span></div>
+            <div class="member"><span class="member-name">Josh Nicholls</span><span class="member-role">Drums</span></div>
+      <div class="member"><span class="member-name">Richard Ley-Hamilton</span><span class="member-role">Guitar</span></div>
+      <div class="member"><span class="member-name">Zac Nicholls</span><span class="member-role">Bass</span></div>
+    </div>
+  </div>
+  <div style="padding-top:4rem;">
+    <div class="about-orbit">
+      <div class="orbit-ring"><div class="orbit-dot"></div></div>
+      <div class="orbit-ring"><div class="orbit-dot" style="background:var(--accent2)"></div></div>
+      <div class="orbit-ring"><div class="orbit-dot" style="background:#fff;width:4px;height:4px;top:-2px;left:calc(50% - 2px)"></div></div>
+      <div class="orbit-center"></div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-logo">Space Bats, Attack!</div>
+  <div class="footer-links">
+    <a href="https://spacebatsattack.bandcamp.com">Bandcamp</a>
+    <a href="https://open.spotify.com/artist/5Qf4t6pGjFwp0SXioXvgcj?si=L01UnW0mSFG6EbcIhowAZg">Spotify</a>
+    <a href="mailto:jz.nich@gmail.com">Contact</a>
+  </div>
+  <div class="footer-copy">© 2026 Space Bats, Attack!</div>
+</footer>
+
+<script>
+const canvas = document.getElementById('star-canvas');
+const ctx = canvas.getContext('2d');
+let W, H, stars = [], mouse = {x:-1000, y:-1000};
+function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+function initStars() {
+  stars = [];
+  for (let i = 0; i < 280; i++) {
+    const x = Math.random()*W, y = Math.random()*H;
+    stars.push({ x, y, baseX:x, baseY:y, r:Math.random()*1.2+0.2, twinkle:Math.random()*Math.PI*2, twinkleSpeed:Math.random()*0.02+0.005 });
+  }
+}
+function drawStars() {
+  ctx.clearRect(0,0,W,H);
+  for (let s of stars) {
+    s.twinkle += s.twinkleSpeed;
+    const alpha = 0.35 + 0.35*Math.sin(s.twinkle);
+    const dx = s.baseX - mouse.x, dy = s.baseY - mouse.y;
+    const dist = Math.sqrt(dx*dx+dy*dy);
+    if (dist < 180) {
+      const force = (180-dist)/180*1.8;
+      s.x += (s.baseX+(dx/dist)*force*2-s.x)*0.08;
+      s.y += (s.baseY+(dy/dist)*force*2-s.y)*0.08;
+    } else {
+      s.x += (s.baseX-s.x)*0.04;
+      s.y += (s.baseY-s.y)*0.04;
+    }
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(${Math.random()>0.92?'220,200,255':'232,228,216'},${alpha})`;
+    ctx.fill();
+  }
+  requestAnimationFrame(drawStars);
+}
+resize(); initStars(); drawStars();
+window.addEventListener('resize', ()=>{ resize(); initStars(); });
+window.addEventListener('mousemove', e => {
+  mouse.x = e.clientX; mouse.y = e.clientY;
+  document.getElementById('cursor').style.left = e.clientX+'px';
+  document.getElementById('cursor').style.top = e.clientY+'px';
+  document.getElementById('cursor-ring').style.left = e.clientX+'px';
+  document.getElementById('cursor-ring').style.top = e.clientY+'px';
+});
+document.querySelectorAll('a, button').forEach(el => {
+  el.addEventListener('mouseenter', ()=>{
+    document.getElementById('cursor').style.width='14px';
+    document.getElementById('cursor').style.height='14px';
+    document.getElementById('cursor-ring').style.width='48px';
+    document.getElementById('cursor-ring').style.height='48px';
+  });
+  el.addEventListener('mouseleave', ()=>{
+    document.getElementById('cursor').style.width='8px';
+    document.getElementById('cursor').style.height='8px';
+    document.getElementById('cursor-ring').style.width='32px';
+    document.getElementById('cursor-ring').style.height='32px';
+  });
+});
+</script>
+</body>
+</html>
