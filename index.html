@@ -7,44 +7,57 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
   :root {
     --void: #03020a;
     --deep: #08051a;
-    --mid: #110d2e;
     --accent: #c8a96e;
     --accent2: #7b6fff;
     --text: #e8e4d8;
     --muted: #7a7590;
     --border: rgba(200,169,110,0.18);
+    --player-h: 72px;
   }
+
   html { scroll-behavior: smooth; }
-  body { background: var(--void); color: var(--text); font-family: 'Space Mono', monospace; overflow-x: hidden; cursor: none; }
+
+  body {
+    background: var(--void);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    overflow-x: hidden;
+    cursor: none;
+    /* leave room for fixed player */
+    padding-bottom: var(--player-h);
+  }
+
+  /* ── Cursor ── */
   #cursor { position: fixed; width: 8px; height: 8px; background: var(--accent); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); transition: width .15s, height .15s; mix-blend-mode: screen; }
   #cursor-ring { position: fixed; width: 32px; height: 32px; border: 1px solid rgba(200,169,110,0.4); border-radius: 50%; pointer-events: none; z-index: 9998; transform: translate(-50%,-50%); transition: width .2s, height .2s; }
+
+  /* ── Star canvas ── */
   #star-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 
+  /* ── Nav ── */
   nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 200;
     display: flex; justify-content: space-between; align-items: center;
     padding: 1.5rem 4rem;
     background: linear-gradient(to bottom, rgba(3,2,10,0.95) 0%, transparent 100%);
   }
-  .nav-logo {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.1rem;
-    letter-spacing: 0.12em;
-    color: var(--accent);
-    text-decoration: none;
-    white-space: nowrap;
-  }
+  .nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 0.12em; color: var(--accent); text-decoration: none; white-space: nowrap; }
   .nav-links { display: flex; gap: 3rem; list-style: none; }
   .nav-links a { font-family: 'Space Mono', monospace; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color .3s; position: relative; }
   .nav-links a::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 1px; background: var(--accent); transition: width .3s; }
   .nav-links a:hover { color: var(--accent); }
   .nav-links a:hover::after { width: 100%; }
+  .nav-hamburger { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 4px; }
+  .nav-hamburger span { display: block; width: 22px; height: 1px; background: var(--muted); transition: background .2s; }
+  .nav-hamburger:hover span { background: var(--accent); }
 
   section { position: relative; z-index: 1; }
 
+  /* ── Hero ── */
   #home { min-height: 100vh; display: flex; align-items: flex-end; padding: 0 4rem 8rem; position: relative; }
   .hero-content { max-width: 900px; }
   .hero-eyebrow { font-family: 'Space Mono', monospace; font-size: 0.65rem; letter-spacing: 0.35em; text-transform: uppercase; color: var(--accent); margin-bottom: 1.5rem; opacity: 0; animation: fadeUp 1s 0.3s forwards; }
@@ -55,79 +68,67 @@
   .hero-line span { font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); writing-mode: vertical-rl; }
   .hero-line::after { content: ''; width: 1px; height: 80px; background: linear-gradient(to bottom, var(--accent), transparent); }
 
+  /* ── Divider ── */
   .section-divider { width: 1px; height: 120px; background: linear-gradient(to bottom, transparent, var(--border), transparent); margin: 0 auto; }
 
-  #music { padding: 8rem 4rem; max-width: 1200px; margin: 0 auto; }
+  /* ── Section header ── */
   .section-header { display: flex; align-items: baseline; gap: 2rem; margin-bottom: 5rem; }
   .section-number { font-family: 'Space Mono', monospace; font-size: 0.65rem; color: var(--accent); letter-spacing: 0.2em; }
   .section-title { font-family: 'Bebas Neue', sans-serif; font-size: 4rem; letter-spacing: 0.05em; color: var(--text); }
   .section-title-line { flex: 1; height: 1px; background: var(--border); }
 
-  /* Studio albums — large 2-up grid */
+  /* ── Music ── */
+  #music { padding: 8rem 4rem; max-width: 1200px; margin: 0 auto; }
+
   .studio-label {
     font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase;
     color: var(--muted); margin-bottom: 1.5rem;
   }
-  .studio-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2px;
-    margin-bottom: 5rem;
-  }
+
+  /* Studio albums — large square 2-up */
+  .studio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin-bottom: 5rem; }
   .release-card { position: relative; overflow: hidden; background: var(--deep); aspect-ratio: 1; cursor: none; }
   .release-card::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(123,111,255,0.08), rgba(200,169,110,0.05)); opacity: 0; transition: opacity .4s; z-index: 1; }
   .release-card:hover::before { opacity: 1; }
-  .release-art { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
-  .release-art svg { width: 60%; opacity: 0.6; transition: opacity .4s, transform .6s; }
-  .release-card:hover .release-art svg { opacity: 0.9; transform: scale(1.05) rotate(3deg); }
+
+  /* Shared release-art: fills card, image covers */
+  .release-art { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+  .release-art img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s ease; }
+  .release-card:hover .release-art img,
+  .release-card-sm:hover .release-art img { transform: scale(1.06); }
+
   .release-info { position: absolute; bottom: 0; left: 0; right: 0; padding: 2rem 1.5rem 1.5rem; background: linear-gradient(to top, rgba(3,2,10,0.95) 0%, transparent 100%); z-index: 2; transform: translateY(10px); opacity: 0; transition: transform .3s, opacity .3s; }
   .release-card:hover .release-info { transform: translateY(0); opacity: 1; }
   .release-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.08em; color: var(--text); }
   .release-meta { font-size: 0.65rem; letter-spacing: 0.2em; color: var(--accent); text-transform: uppercase; margin-top: 0.3rem; }
-  .listen-btn { display: inline-block; margin-top: 0.75rem; padding: 0.4rem 1rem; border: 1px solid var(--border); font-family: 'Space Mono', monospace; font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); background: transparent; cursor: none; transition: background .2s, border-color .2s; }
+  .listen-btn { display: inline-block; margin-top: 0.75rem; padding: 0.4rem 1rem; border: 1px solid var(--border); font-family: 'Space Mono', monospace; font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); background: transparent; cursor: none; text-decoration: none; transition: background .2s, border-color .2s; }
   .listen-btn:hover { background: rgba(200,169,110,0.1); border-color: var(--accent); }
 
-  /* Sub-section: EPs & Live */
-  .sub-section-divider {
-    display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem;
-  }
-  .sub-section-label {
-    font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); white-space: nowrap;
-  }
+  /* EPs & Live sub-section */
+  .sub-section-divider { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; }
+  .sub-section-label { font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
   .sub-section-line { flex: 1; height: 1px; background: var(--border); }
 
-  .small-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 2px;
-  }
+  .small-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; }
 
-  /* Small cards are wider than tall */
+  /* Small cards — SQUARE */
   .release-card-sm {
     position: relative; overflow: hidden; background: var(--deep);
-    aspect-ratio: 3/4; cursor: none;
+    aspect-ratio: 1; cursor: none;
   }
   .release-card-sm::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(123,111,255,0.08), rgba(200,169,110,0.05)); opacity: 0; transition: opacity .4s; z-index: 1; }
   .release-card-sm:hover::before { opacity: 1; }
-  .release-card-sm .release-art { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-  .release-card-sm .release-art svg { width: 55%; opacity: 0.5; transition: opacity .4s, transform .5s; }
-  .release-card-sm:hover .release-art svg { opacity: 0.85; transform: scale(1.08); }
   .release-card-sm .release-info { position: absolute; bottom: 0; left: 0; right: 0; padding: 1.5rem 1rem 1rem; background: linear-gradient(to top, rgba(3,2,10,0.97) 0%, transparent 100%); z-index: 2; transform: translateY(8px); opacity: 0; transition: transform .3s, opacity .3s; }
   .release-card-sm:hover .release-info { transform: translateY(0); opacity: 1; }
   .release-card-sm .release-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 0.06em; color: var(--text); }
   .release-card-sm .release-meta { font-size: 0.58rem; letter-spacing: 0.18em; color: var(--accent); text-transform: uppercase; margin-top: 0.2rem; }
   .release-card-sm .listen-btn { margin-top: 0.5rem; padding: 0.3rem 0.8rem; font-size: 0.55rem; }
 
-  /* type badge */
-  .type-badge {
-    position: absolute; top: 1rem; right: 1rem; z-index: 3;
-    padding: 0.25rem 0.6rem;
-    border: 1px solid var(--border);
-    font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase;
-    color: var(--muted); background: rgba(3,2,10,0.7);
-  }
+  /* Type badge */
+  .type-badge { position: absolute; top: 0.75rem; right: 0.75rem; z-index: 3; padding: 0.2rem 0.5rem; border: 1px solid var(--border); font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); background: rgba(3,2,10,0.75); }
   .type-badge.live { color: var(--accent2); border-color: rgba(123,111,255,0.3); }
 
+  /* ── Shows ── */
   #shows { padding: 8rem 4rem; max-width: 1200px; margin: 0 auto; }
   .shows-list { display: flex; flex-direction: column; }
   .show-row { display: grid; grid-template-columns: 120px 1fr auto auto; align-items: center; gap: 2rem; padding: 1.75rem 0; border-bottom: 1px solid var(--border); position: relative; cursor: none; transition: padding-left .3s; }
@@ -140,9 +141,10 @@
   .show-location { font-size: 0.65rem; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; margin-top: 4px; }
   .show-support { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.1em; text-align: right; }
   .show-support span { display: block; color: var(--text); font-size: 0.75rem; margin-top: 2px; }
-  .ticket-btn { padding: 0.6rem 1.4rem; border: 1px solid var(--border); font-family: 'Space Mono', monospace; font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); background: transparent; cursor: none; white-space: nowrap; transition: background .2s, border-color .2s; }
+  .ticket-btn { padding: 0.6rem 1.4rem; border: 1px solid var(--border); font-family: 'Space Mono', monospace; font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); background: transparent; cursor: none; white-space: nowrap; text-decoration: none; transition: background .2s, border-color .2s; }
   .ticket-btn:hover { background: rgba(200,169,110,0.1); border-color: var(--accent); }
 
+  /* ── About ── */
   #about { padding: 8rem 4rem 12rem; max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 8rem; align-items: start; }
   .about-text p { font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; font-weight: 300; line-height: 1.8; color: var(--text); margin-bottom: 1.5rem; }
   .about-text p + p { color: var(--muted); font-size: 1.15rem; }
@@ -158,23 +160,298 @@
   .member-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.05em; color: var(--text); }
   .member-role { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
 
-  .footer { position: relative; z-index: 1; border-top: 1px solid var(--border); padding: 3rem 4rem; display: flex; justify-content: space-between; align-items: center; }
+  /* ── Footer ── */
+  .footer { position: relative; z-index: 1; border-top: 1px solid var(--border); padding: 3rem 4rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
   .footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 0.15em; color: var(--muted); }
   .footer-links { display: flex; gap: 2rem; }
   .footer-links a { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color .2s; }
   .footer-links a:hover { color: var(--accent); }
   .footer-copy { font-size: 0.6rem; letter-spacing: 0.1em; color: var(--muted); opacity: 0.5; }
 
+  /* ────────────────────────────────────────────
+     Music Player
+  ──────────────────────────────────────────── */
+  #player {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: var(--player-h);
+    z-index: 300;
+    background: rgba(8,5,26,0.97);
+    border-top: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 0 2rem;
+  }
+
+  /* Track info */
+  .player-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 0 0 200px;
+  }
+  .player-track {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.06em;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .player-album {
+    font-size: 0.58rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Controls */
+  .player-controls {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  .p-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    transition: color .2s;
+  }
+  .p-btn:hover { color: var(--accent); }
+  .p-btn svg { width: 16px; height: 16px; fill: currentColor; }
+
+  .p-btn-play {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    color: var(--text);
+    background: rgba(200,169,110,0.06);
+    flex-shrink: 0;
+  }
+  .p-btn-play:hover { border-color: var(--accent); background: rgba(200,169,110,0.12); color: var(--accent); }
+  .p-btn-play svg { width: 14px; height: 14px; }
+
+  /* Progress */
+  .player-progress {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+  .p-time { font-size: 0.6rem; letter-spacing: 0.08em; color: var(--muted); flex-shrink: 0; font-variant-numeric: tabular-nums; width: 36px; }
+  .p-time.right { text-align: right; }
+
+  .p-bar-wrap {
+    flex: 1;
+    height: 2px;
+    background: rgba(200,169,110,0.12);
+    position: relative;
+    cursor: pointer;
+  }
+  .p-bar-wrap:hover { height: 3px; }
+  .p-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    pointer-events: none;
+    position: relative;
+  }
+  .p-bar-fill::after {
+    content: '';
+    position: absolute;
+    right: -4px; top: 50%;
+    transform: translateY(-50%);
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity .15s;
+  }
+  .p-bar-wrap:hover .p-bar-fill::after { opacity: 1; }
+
+  /* Volume */
+  .player-volume {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-shrink: 0;
+    width: 120px;
+  }
+  .p-vol-bar {
+    flex: 1;
+    height: 2px;
+    background: rgba(200,169,110,0.12);
+    cursor: pointer;
+    position: relative;
+  }
+  .p-vol-fill { height: 100%; background: var(--muted); width: 80%; pointer-events: none; }
+
+  /* Track list toggle */
+  .p-tracklist-btn {
+    font-size: 0.58rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    transition: color .2s;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .p-tracklist-btn:hover { color: var(--accent); }
+
+  /* Track list drawer */
+  #tracklist {
+    position: fixed;
+    bottom: var(--player-h);
+    left: 0; right: 0;
+    z-index: 299;
+    background: rgba(8,5,26,0.98);
+    border-top: 1px solid var(--border);
+    max-height: 280px;
+    overflow-y: auto;
+    transform: translateY(100%);
+    transition: transform .3s cubic-bezier(0.4,0,0.2,1);
+  }
+  #tracklist.open { transform: translateY(0); }
+
+  .tl-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 2rem;
+    border-bottom: 1px solid rgba(200,169,110,0.06);
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .tl-row:hover { background: rgba(200,169,110,0.04); }
+  .tl-row.active { background: rgba(200,169,110,0.07); }
+  .tl-row.active .tl-title { color: var(--accent); }
+
+  .tl-num { font-size: 0.6rem; color: var(--muted); width: 20px; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+  .tl-title { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.05em; color: var(--text); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tl-album { font-size: 0.58rem; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; flex-shrink: 0; }
+  .tl-dur { font-size: 0.6rem; color: var(--muted); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+
+  /* ── Animations ── */
   @keyframes fadeUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
   @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
   @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
 
+  /* ── Glitch ── */
   .glitch { position: relative; }
   .glitch:hover::before, .glitch:hover::after { content: attr(data-text); position: absolute; top:0; left:0; width:100%; font-family:'Bebas Neue',sans-serif; font-size:inherit; line-height:inherit; }
   .glitch:hover::before { color:var(--accent2); animation:glitch1 .3s step-start infinite; clip-path:polygon(0 0,100% 0,100% 45%,0 45%); }
   .glitch:hover::after { color:var(--accent); animation:glitch2 .3s step-start infinite; clip-path:polygon(0 55%,100% 55%,100% 100%,0 100%); }
   @keyframes glitch1 { 0%,100%{transform:translate(0)} 20%{transform:translate(-3px,1px)} 40%{transform:translate(3px,-1px)} 60%{transform:translate(-2px,2px)} 80%{transform:translate(2px,-2px)} }
   @keyframes glitch2 { 0%,100%{transform:translate(0)} 20%{transform:translate(3px,-1px)} 40%{transform:translate(-3px,1px)} 60%{transform:translate(2px,-2px)} 80%{transform:translate(-2px,2px)} }
+
+  /* ════════════════════════════════════════
+     MOBILE  ≤ 768px
+  ════════════════════════════════════════ */
+  @media (max-width: 768px) {
+    body { cursor: auto; }
+    #cursor, #cursor-ring { display: none; }
+
+    /* Nav */
+    nav { padding: 1.25rem 1.5rem; }
+    .nav-hamburger { display: flex; }
+    .nav-links {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(3,2,10,0.98);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2.5rem;
+      z-index: 190;
+    }
+    .nav-links.open { display: flex; }
+    .nav-links a { font-size: 0.9rem; }
+
+    /* Hero */
+    #home { padding: 0 1.5rem 6rem; }
+    .hero-line { display: none; }
+
+    /* Sections */
+    .section-header { margin-bottom: 2.5rem; gap: 1rem; }
+    .section-title { font-size: 2.5rem; }
+
+    /* Music */
+    #music { padding: 5rem 1.5rem; }
+    .studio-grid { grid-template-columns: 1fr; gap: 2px; margin-bottom: 3rem; }
+    /* On mobile the studio cards stack — keep them square but cap height */
+    .release-card { aspect-ratio: 1; max-height: 80vw; }
+    /* Always show release info on mobile (no hover) */
+    .release-info, .release-card-sm .release-info {
+      transform: translateY(0) !important;
+      opacity: 1 !important;
+    }
+
+    /* Small grid: 2 columns on mobile */
+    .small-grid { grid-template-columns: repeat(2, 1fr); gap: 2px; }
+    .release-card-sm { aspect-ratio: 1; }
+    .release-card-sm .release-title { font-size: 0.95rem; }
+
+    /* Shows */
+    #shows { padding: 5rem 1.5rem; }
+    .show-row {
+      grid-template-columns: 80px 1fr;
+      grid-template-rows: auto auto;
+      gap: 0.5rem 1rem;
+      padding: 1.25rem 0;
+    }
+    .show-row::before { left: -1.5rem; }
+    .show-row:hover::before { width: calc(100% + 3rem); }
+    .show-support { grid-column: 2; font-size: 0.6rem; text-align: left; }
+    .ticket-btn { grid-column: 1 / -1; width: 100%; text-align: center; margin-top: 0.25rem; }
+    .show-venue { font-size: 1.2rem; }
+
+    /* About */
+    #about { padding: 5rem 1.5rem 8rem; grid-template-columns: 1fr; gap: 3rem; }
+    .about-text p { font-size: 1.1rem; }
+    .about-orbit { max-width: 240px; margin: 0 auto; }
+
+    /* Footer */
+    .footer { padding: 2rem 1.5rem; flex-direction: column; align-items: flex-start; gap: 1rem; }
+
+    /* Player */
+    #player { padding: 0 1rem; gap: 0.75rem; }
+    .player-info { flex: 0 0 auto; max-width: 120px; }
+    .player-track { font-size: 0.85rem; }
+    .player-album { display: none; }
+    .player-volume { display: none; }
+    .p-tracklist-btn { display: none; }
+    .p-time { display: none; }
+    .p-btn svg { width: 14px; height: 14px; }
+
+    /* Tracklist */
+    .tl-album { display: none; }
+    .tl-row { padding: 0.75rem 1rem; }
+  }
+
+  @media (max-width: 480px) {
+    .small-grid { grid-template-columns: repeat(2, 1fr); }
+    .player-controls { gap: 0.75rem; }
+  }
 </style>
 </head>
 <body>
@@ -183,15 +460,20 @@
 <div id="cursor-ring"></div>
 <canvas id="star-canvas"></canvas>
 
+<!-- ── Nav ── -->
 <nav>
   <a href="#home" class="nav-logo">Space Bats, Attack!</a>
-  <ul class="nav-links">
+  <button class="nav-hamburger" id="hamburger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+  <ul class="nav-links" id="nav-links">
     <li><a href="#music">Music</a></li>
     <li><a href="#shows">Shows</a></li>
     <li><a href="#about">About</a></li>
   </ul>
 </nav>
 
+<!-- ── Hero ── -->
 <section id="home">
   <div class="hero-content">
     <p class="hero-eyebrow">Dunedin, New Zealand &nbsp;·&nbsp;</p>
@@ -203,58 +485,7 @@
 
 <div class="section-divider"></div>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Space Bats, Attack!</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
-<style>
-  /* (Your existing CSS remains unchanged until the .release-art section) */
-
-  .release-art {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .release-art img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform .6s ease;
-  }
-
-  .release-card:hover .release-art img,
-  .release-card-sm:hover .release-art img {
-    transform: scale(1.06);
-  }
-
-  /* Rest of your original CSS... */
-  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-  :root {
-    --void: #03020a;
-    --deep: #08051a;
-    --mid: #110d2e;
-    --accent: #c8a96e;
-    --accent2: #7b6fff;
-    --text: #e8e4d8;
-    --muted: #7a7590;
-    --border: rgba(200,169,110,0.18);
-  }
-  /* ... (all your original styles continue here) ... */
-</style>
-</head>
-<body>
-
-<!-- [Your nav, home, canvas, etc. remain unchanged] -->
-
+<!-- ── Music ── -->
 <section id="music">
   <div class="section-header">
     <span class="section-number">01 &mdash;</span>
@@ -265,49 +496,38 @@
   <p class="studio-label">Studio Albums</p>
 
   <div class="studio-grid">
-
-    <!-- Album 1 -->
     <div class="release-card">
       <div class="release-art">
-        <img src="images/sba.webp" 
-             alt="Space Bats, Attack! (2015)" loading="lazy">
+        <img src="images/sba.webp" alt="Space Bats, Attack! (2015)" loading="lazy">
       </div>
       <div class="release-info">
         <div class="release-title">Space Bats, Attack!</div>
         <div class="release-meta">Studio Album &nbsp;·&nbsp; 2015</div>
-        <a href="https://spacebatsattack.bandcamp.com/album/space-bats-attack" class="listen-btn" target="_blank" rel="noopener">Listen</a>
+        <a href="https://spacebatsattack.bandcamp.com/album/space-bats-attack" class="listen-btn" target="_blank" rel="noopener">Listen on Bandcamp</a>
       </div>
     </div>
-
-    <!-- Album 2 -->
     <div class="release-card">
       <div class="release-art">
-        <img src="images/oort.webp" 
-             alt="Oort (2021)" loading="lazy">
+        <img src="images/oort.webp" alt="Oort (2021)" loading="lazy">
       </div>
       <div class="release-info">
         <div class="release-title">Oort</div>
         <div class="release-meta">Studio Album &nbsp;·&nbsp; 2021</div>
-        <a href="https://spacebatsattack.bandcamp.com/album/oort" class="listen-btn" target="_blank" rel="noopener">Listen</a>
+        <a href="https://spacebatsattack.bandcamp.com/album/oort" class="listen-btn" target="_blank" rel="noopener">Listen on Bandcamp</a>
       </div>
     </div>
-
   </div>
 
-  <!-- EPs & Live sub-section -->
   <div class="sub-section-divider">
     <span class="sub-section-label">EPs &amp; Live</span>
     <div class="sub-section-line"></div>
   </div>
 
   <div class="small-grid">
-
-    <!-- EP 1 -->
     <div class="release-card-sm">
       <span class="type-badge">EP</span>
       <div class="release-art">
-        <img src="images/Holy.webp" 
-             alt="Holy Schmow, Drone Metal?" loading="lazy">
+        <img src="images/Holy.webp" alt="Holy Schmow, Drone Metal?" loading="lazy">
       </div>
       <div class="release-info">
         <div class="release-title">Holy Schmow, Drone Metal?</div>
@@ -315,13 +535,10 @@
         <a href="https://spacebatsattack.bandcamp.com/album/holy-schmow-drone-metal" class="listen-btn" target="_blank" rel="noopener">Listen</a>
       </div>
     </div>
-
-    <!-- EP 2 -->
     <div class="release-card-sm">
       <span class="type-badge">EP</span>
       <div class="release-art">
-        <img src="images/EP1.webp" 
-             alt="EP1" loading="lazy">
+        <img src="images/EP1.webp" alt="EP1" loading="lazy">
       </div>
       <div class="release-info">
         <div class="release-title">EP1</div>
@@ -329,27 +546,21 @@
         <a href="https://spacebatsattack.bandcamp.com/album/ep1" class="listen-btn" target="_blank" rel="noopener">Listen</a>
       </div>
     </div>
-
-    <!-- EP 3 -->
     <div class="release-card-sm">
-      <span class="type-badge live">EP</span>
+      <span class="type-badge">EP</span>
       <div class="release-art">
-        <img src="images/ˆ_ˆ.webp" 
-             alt="ˆ"ˆ Sub-EP ^«^" loading="lazy">
+        <img src="images/ˆ_ˆ.webp" alt="ˆ"ˆ Sub-EP ^«^" loading="lazy">
       </div>
       <div class="release-info">
-        <div class="release-title">ˆ"ˆ Sub-EP ^«^  </div>
+        <div class="release-title">ˆ"ˆ Sub-EP ^«^</div>
         <div class="release-meta">EP &nbsp;·&nbsp; 2016</div>
         <a href="https://spacebatsattack.bandcamp.com/album/sub-ep" class="listen-btn" target="_blank" rel="noopener">Listen</a>
       </div>
     </div>
-
-    <!-- Live 1 -->
     <div class="release-card-sm">
       <span class="type-badge live">Live</span>
       <div class="release-art">
-        <img src="images/live.webp" 
-             alt="Transmission: Whammy" loading="lazy">
+        <img src="images/live.webp" alt="Radio One Live to Air" loading="lazy">
       </div>
       <div class="release-info">
         <div class="release-title">Radio One Live to Air</div>
@@ -357,32 +568,26 @@
         <a href="https://spacebatsattack.bandcamp.com/album/radio-one-live-to-air" class="listen-btn" target="_blank" rel="noopener">Listen</a>
       </div>
     </div>
-
   </div>
 </section>
 
-<!-- The rest of your site (shows, about, footer, script) stays exactly the same -->
-
-</body>
-</html>
-
 <div class="section-divider"></div>
 
+<!-- ── Shows ── -->
 <section id="shows">
-  <div style="max-width:1200px; margin:0 auto; padding:0 4rem;">
-    <div class="section-header">
-      <span class="section-number">02 &mdash;</span>
-      <h2 class="section-title">Shows</h2>
-      <div class="section-title-line"></div>
-    </div>
-    <div class="shows-list">
-<!--PUT SHOW CODE IN HERE-->>
-    </div>
+  <div class="section-header">
+    <span class="section-number">02 &mdash;</span>
+    <h2 class="section-title">Shows</h2>
+    <div class="section-title-line"></div>
+  </div>
+  <div class="shows-list">
+<p>Nothing here right now</p>>
   </div>
 </section>
 
 <div class="section-divider"></div>
 
+<!-- ── About ── -->
 <section id="about">
   <div class="about-text">
     <div class="section-header" style="margin-bottom:3rem;">
@@ -390,11 +595,10 @@
       <h2 class="section-title">About</h2>
     </div>
     <p>Space Bats, Attack! are a New Zealand sci-fi-soaked doom rock collective known for their spellbinding, frenetic live shows and intricate, expansive instrumental soundscapes.</p>
-    <p>Formed in 2011 in Ōtepoti Dunedin by guitarist Lee Nicolson (Thundercub / Lightning Wave) and drummer Josh Nicholls (Bathysphere, Dale Kerrigan, Fazed on a Pony), the band was later joined by Richard Ley-Hamilton (asta rangu) in 2013 and Zac Nicholls (Koizilla) in 2016.
-The current quartet crafts angular, expansive, and hard-hitting instrumental rock, blending heavy celestial riffs with raw, improvised energy.</p>
+    <p>Formed in 2011 in Ōtepoti Dunedin by guitarist Lee Nicolson (Thundercub / Lightning Wave) and drummer Josh Nicholls (Bathysphere, Dale Kerrigan, Fazed on a Pony), the band was later joined by Richard Ley-Hamilton (asta rangu) in 2013 and Zac Nicholls (Koizilla) in 2016. The current quartet crafts angular, expansive, and hard-hitting instrumental rock, blending heavy celestial riffs with raw, improvised energy.</p>
     <div class="members-list">
       <div class="member"><span class="member-name">Lee Nicholson</span><span class="member-role">Guitar / Pedals</span></div>
-            <div class="member"><span class="member-name">Josh Nicholls</span><span class="member-role">Drums</span></div>
+      <div class="member"><span class="member-name">Josh Nicholls</span><span class="member-role">Drums</span></div>
       <div class="member"><span class="member-name">Richard Ley-Hamilton</span><span class="member-role">Guitar</span></div>
       <div class="member"><span class="member-name">Zac Nicholls</span><span class="member-role">Bass</span></div>
     </div>
@@ -409,6 +613,7 @@ The current quartet crafts angular, expansive, and hard-hitting instrumental roc
   </div>
 </section>
 
+<!-- ── Footer ── -->
 <footer class="footer">
   <div class="footer-logo">Space Bats, Attack!</div>
   <div class="footer-links">
@@ -419,7 +624,57 @@ The current quartet crafts angular, expansive, and hard-hitting instrumental roc
   <div class="footer-copy">© 2026 Space Bats, Attack!</div>
 </footer>
 
+<!-- ════════════════════════════════════════
+     Music Player
+════════════════════════════════════════ -->
+<div id="tracklist"></div>
+
+<div id="player">
+  <!-- Track info -->
+  <div class="player-info">
+    <div class="player-track" id="p-track">Select a track</div>
+    <div class="player-album" id="p-album">—</div>
+  </div>
+
+  <!-- Controls -->
+  <div class="player-controls">
+    <button class="p-btn" id="p-prev" title="Previous">
+      <svg viewBox="0 0 16 16"><path d="M3 2h2v12H3zM5.5 8L14 2v12z"/></svg>
+    </button>
+    <button class="p-btn p-btn-play" id="p-play" title="Play / Pause">
+      <svg id="p-play-icon" viewBox="0 0 16 16"><path d="M4 2l10 6-10 6z"/></svg>
+    </button>
+    <button class="p-btn" id="p-next" title="Next">
+      <svg viewBox="0 0 16 16"><path d="M11 2h2v12h-2zM10.5 8L2 2v12z"/></svg>
+    </button>
+  </div>
+
+  <!-- Progress -->
+  <div class="player-progress">
+    <span class="p-time" id="p-cur">0:00</span>
+    <div class="p-bar-wrap" id="p-bar-wrap">
+      <div class="p-bar-fill" id="p-bar-fill"></div>
+    </div>
+    <span class="p-time right" id="p-dur">0:00</span>
+  </div>
+
+  <!-- Volume -->
+  <div class="player-volume">
+    <button class="p-btn" id="p-mute" title="Mute">
+      <svg id="p-vol-icon" viewBox="0 0 16 16"><path d="M2 5h3l4-3v12l-4-3H2zM11 4a5 5 0 010 8M12.5 2.5a8 8 0 010 11"/></svg>
+    </button>
+    <div class="p-vol-bar" id="p-vol-bar">
+      <div class="p-vol-fill" id="p-vol-fill"></div>
+    </div>
+  </div>
+
+  <button class="p-tracklist-btn" id="p-tl-btn">Tracks ↑</button>
+</div>
+
+<audio id="audio-el" preload="none"></audio>
+
 <script>
+/* ── Star field ── */
 const canvas = document.getElementById('star-canvas');
 const ctx = canvas.getContext('2d');
 let W, H, stars = [], mouse = {x:-1000, y:-1000};
@@ -457,25 +712,197 @@ resize(); initStars(); drawStars();
 window.addEventListener('resize', ()=>{ resize(); initStars(); });
 window.addEventListener('mousemove', e => {
   mouse.x = e.clientX; mouse.y = e.clientY;
-  document.getElementById('cursor').style.left = e.clientX+'px';
-  document.getElementById('cursor').style.top = e.clientY+'px';
-  document.getElementById('cursor-ring').style.left = e.clientX+'px';
-  document.getElementById('cursor-ring').style.top = e.clientY+'px';
+  const cur = document.getElementById('cursor');
+  const ring = document.getElementById('cursor-ring');
+  if (cur) { cur.style.left = e.clientX+'px'; cur.style.top = e.clientY+'px'; }
+  if (ring) { ring.style.left = e.clientX+'px'; ring.style.top = e.clientY+'px'; }
 });
 document.querySelectorAll('a, button').forEach(el => {
   el.addEventListener('mouseenter', ()=>{
-    document.getElementById('cursor').style.width='14px';
-    document.getElementById('cursor').style.height='14px';
-    document.getElementById('cursor-ring').style.width='48px';
-    document.getElementById('cursor-ring').style.height='48px';
+    const cur = document.getElementById('cursor');
+    const ring = document.getElementById('cursor-ring');
+    if (cur) { cur.style.width='14px'; cur.style.height='14px'; }
+    if (ring) { ring.style.width='48px'; ring.style.height='48px'; }
   });
   el.addEventListener('mouseleave', ()=>{
-    document.getElementById('cursor').style.width='8px';
-    document.getElementById('cursor').style.height='8px';
-    document.getElementById('cursor-ring').style.width='32px';
-    document.getElementById('cursor-ring').style.height='32px';
+    const cur = document.getElementById('cursor');
+    const ring = document.getElementById('cursor-ring');
+    if (cur) { cur.style.width='8px'; cur.style.height='8px'; }
+    if (ring) { ring.style.width='32px'; ring.style.height='32px'; }
   });
 });
+
+/* ── Mobile nav ── */
+const hamburger = document.getElementById('hamburger');
+const navLinks = document.getElementById('nav-links');
+hamburger.addEventListener('click', () => {
+  navLinks.classList.toggle('open');
+});
+navLinks.querySelectorAll('a').forEach(a => {
+  a.addEventListener('click', () => navLinks.classList.remove('open'));
+});
+
+/* ══════════════════════════════════════════
+   Music Player
+   Reads all .mp3 files from /audio/
+   Tracks are defined here — add filenames to
+   match whatever you drop into /audio/
+══════════════════════════════════════════ */
+const TRACKS = [
+  /* Add your tracks here. Format:
+     { file: 'audio/filename.mp3', title: 'Track Title', album: 'Album Name' }
+  */
+  { file: 'audio/90s.mp3', title: '90s', album: 'Oort' },
+  { file: 'audio/Battle.mp3', title: 'Battle', album: 'Space Bats, Attack!' },
+  { file: 'audio/Oort.mp3', title: 'Oort', album: 'Oort' },
+  { file: 'audio/SBA.mp3', title: 'Space Bats, Attack!', album: 'Space Bats, Attack!' },
+  { file: 'audio/Shifty Drifty.mp3', title: 'Shifty Drifty', album: 'Space Bats, Attack!' },
+  { file: 'audio/Washy.mp3', title: 'Washy', album: 'Oort' },
+];
+
+const audio = document.getElementById('audio-el');
+const pTrack = document.getElementById('p-track');
+const pAlbum = document.getElementById('p-album');
+const pPlay = document.getElementById('p-play');
+const pPlayIcon = document.getElementById('p-play-icon');
+const pPrev = document.getElementById('p-prev');
+const pNext = document.getElementById('p-next');
+const pCur = document.getElementById('p-cur');
+const pDur = document.getElementById('p-dur');
+const pBarWrap = document.getElementById('p-bar-wrap');
+const pBarFill = document.getElementById('p-bar-fill');
+const pVolBar = document.getElementById('p-vol-bar');
+const pVolFill = document.getElementById('p-vol-fill');
+const pMute = document.getElementById('p-mute');
+const pTlBtn = document.getElementById('p-tl-btn');
+const tracklist = document.getElementById('tracklist');
+
+let current = 0;
+let playing = false;
+let muted = false;
+let volume = 0.8;
+let tlOpen = false;
+
+const PLAY_PATH = 'M4 2l10 6-10 6z';
+const PAUSE_PATH = 'M3 2h4v12H3zM9 2h4v12H9z';
+const VOL_PATH = 'M2 5h3l4-3v12l-4-3H2zM11 4a5 5 0 010 8M12.5 2.5a8 8 0 010 11';
+const MUTE_PATH = 'M2 5h3l4-3v12l-4-3H2zM12 6l2 2-2 2M14 6l-2 2 2 2';
+
+function fmt(s) {
+  if (!isFinite(s)) return '0:00';
+  const m = Math.floor(s/60), sec = Math.floor(s%60);
+  return `${m}:${sec.toString().padStart(2,'0')}`;
+}
+
+function loadTrack(idx, autoplay) {
+  if (!TRACKS.length) return;
+  current = (idx + TRACKS.length) % TRACKS.length;
+  const t = TRACKS[current];
+  audio.src = t.file;
+  audio.volume = volume;
+  pTrack.textContent = t.title;
+  pAlbum.textContent = t.album;
+  pBarFill.style.width = '0%';
+  pCur.textContent = '0:00';
+  pDur.textContent = '0:00';
+  document.querySelectorAll('.tl-row').forEach((r,i) => r.classList.toggle('active', i===current));
+  if (autoplay) { audio.play(); playing = true; updatePlayIcon(); }
+}
+
+function updatePlayIcon() {
+  pPlayIcon.querySelector('path') ? pPlayIcon.querySelector('path').setAttribute('d', playing ? PAUSE_PATH : PLAY_PATH) : null;
+  // recreate path safely
+  pPlayIcon.innerHTML = `<path d="${playing ? PAUSE_PATH : PLAY_PATH}"/>`;
+}
+
+function buildTracklist() {
+  tracklist.innerHTML = '';
+  TRACKS.forEach((t, i) => {
+    const row = document.createElement('div');
+    row.className = 'tl-row' + (i === current ? ' active' : '');
+    row.innerHTML = `<span class="tl-num">${i+1}</span><span class="tl-title">${t.title}</span><span class="tl-album">${t.album}</span><span class="tl-dur" id="tl-dur-${i}">—</span>`;
+    row.addEventListener('click', () => { loadTrack(i, true); });
+    tracklist.appendChild(row);
+  });
+}
+
+pPlay.addEventListener('click', () => {
+  if (!audio.src || audio.src === window.location.href) { loadTrack(0, true); return; }
+  if (playing) { audio.pause(); playing = false; }
+  else { audio.play(); playing = true; }
+  updatePlayIcon();
+});
+
+pPrev.addEventListener('click', () => {
+  if (audio.currentTime > 3) { audio.currentTime = 0; }
+  else { loadTrack(current - 1, playing); }
+});
+pNext.addEventListener('click', () => loadTrack(current + 1, playing));
+
+audio.addEventListener('ended', () => { loadTrack(current + 1, true); });
+
+audio.addEventListener('timeupdate', () => {
+  if (!audio.duration) return;
+  const pct = (audio.currentTime / audio.duration) * 100;
+  pBarFill.style.width = pct + '%';
+  pCur.textContent = fmt(audio.currentTime);
+});
+
+audio.addEventListener('loadedmetadata', () => {
+  pDur.textContent = fmt(audio.duration);
+  const durEl = document.getElementById(`tl-dur-${current}`);
+  if (durEl) durEl.textContent = fmt(audio.duration);
+});
+
+/* Seek */
+let seeking = false;
+pBarWrap.addEventListener('mousedown', e => { seeking = true; seek(e); });
+pBarWrap.addEventListener('touchstart', e => { seeking = true; seekTouch(e); }, {passive:true});
+window.addEventListener('mousemove', e => { if (seeking) seek(e); });
+window.addEventListener('touchmove', e => { if (seeking) seekTouch(e); }, {passive:true});
+window.addEventListener('mouseup', () => { seeking = false; });
+window.addEventListener('touchend', () => { seeking = false; });
+function seek(e) {
+  const r = pBarWrap.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+  if (audio.duration) audio.currentTime = pct * audio.duration;
+}
+function seekTouch(e) {
+  if (e.touches.length) seek(e.touches[0]);
+}
+
+/* Volume */
+pVolBar.addEventListener('click', e => {
+  const r = pVolBar.getBoundingClientRect();
+  volume = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+  audio.volume = volume;
+  pVolFill.style.width = (volume*100) + '%';
+  if (muted && volume > 0) { muted = false; audio.muted = false; updateVolIcon(); }
+});
+pMute.addEventListener('click', () => {
+  muted = !muted;
+  audio.muted = muted;
+  updateVolIcon();
+});
+function updateVolIcon() {
+  pMute.querySelector('path') && (pMute.innerHTML = `<svg id="p-vol-icon" viewBox="0 0 16 16"><path d="${muted ? MUTE_PATH : VOL_PATH}"/></svg>`);
+}
+
+/* Tracklist */
+pTlBtn.addEventListener('click', () => {
+  tlOpen = !tlOpen;
+  tracklist.classList.toggle('open', tlOpen);
+  pTlBtn.textContent = tlOpen ? 'Tracks ↓' : 'Tracks ↑';
+});
+
+/* Init */
+buildTracklist();
+audio.volume = volume;
+pVolFill.style.width = (volume*100) + '%';
+if (TRACKS.length) {
+  pTrack.textContent = TRACKS[0].title;
+  pAlbum.textContent = TRACKS[0].album;
+}
 </script>
 </body>
 </html>
